@@ -6,7 +6,7 @@ class Tree(Recursive):
         self.value = value
         self.forest = []
 
-    def __recur__(self):
+    def __recur__(self, visited=None):
         return self.forest
 
     def add(self, *forest):
