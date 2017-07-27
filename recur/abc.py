@@ -41,8 +41,8 @@ class Recursive(ABC):
         for item in items:
             visited.add(item)
 
-        for item in reversed(self.__recur__()):
-            yield from item.__reversed__()
+        for item in reversed(items):
+            yield from item.__reversed__(visited)
         yield self
 
 
