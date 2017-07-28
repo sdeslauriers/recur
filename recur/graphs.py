@@ -1,3 +1,5 @@
+from itertools import combinations
+
 from .abc import Recursive
 
 
@@ -23,7 +25,53 @@ class Undirected(Recursive):
         else:
             links = self._links
 
+        # Even if the links are unordered, we want to be able to iterate over
+        # them with reverse (for compatibility), so we return a tuple.
         return tuple(links)
+
+    @property
+    def family(self):
+        """Get the family of a node"""
+
+        return set(self._links) | set(self)
+
+    @property
+    def is_isolated(self):
+        """Indicates if a node is isolated (has no links)"""
+
+        return len(self._links) == 0
+
+    @property
+    def is_simplicial(self):
+        """Indicates if a node is simplicial
+
+        A node is simplicial if all the nodes it is linked to are pairwise
+        link. In other words, the family of the node form a clique.
+
+        """
+
+        for node, other_node in combinations(self.neighbors, 2):
+            if node not in other_node.neighbors:
+                return False
+
+        return True
+
+    @property
+    def nb_missing_links(self):
+        """Counts the number of missing links to make the node simplicial"""
+
+        missing = 0
+        for node, other_node in combinations(self.neighbors, 2):
+            if node not in other_node.neighbors:
+                missing += 1
+
+        return missing
+
+    @property
+    def neighbors(self):
+        """Get the neighbors of a node"""
+
+        return set(self._links)
 
     def add(self, node):
         """Adds a node to the graph by linking it with the current node
