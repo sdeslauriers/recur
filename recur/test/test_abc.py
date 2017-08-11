@@ -1,6 +1,6 @@
 import unittest
 
-from recur.abc import MultiRecursiveIterator
+from recur.abc import MultiRecursiveIterator, postorder, preorder
 from recur.abc import postorderfunction, preorderfunction
 import recur.tree
 
@@ -104,6 +104,31 @@ class TestMultiRecursive(unittest.TestCase):
         iterator = MultiRecursiveIterator(nodes[-1], 1, 'post')
         output = [n.value for n in iterator]
         self.assertListEqual(output, [0, 1, 2, 3])
+
+        # Override order using reverse.
+        iterator = MultiRecursiveIterator(nodes[-1], 1, 'pre')
+        output = [n.value for n in reversed(iterator)]
+        self.assertListEqual(output, [0, 1, 2, 3])
+
+    def test_multi_recursive_iterator_functions(self):
+        """Test the MultiRecusiveIterator with explicit order functions
+
+        This test verifies that the order of iteration can be explicitly
+        indicated using the preorder and postorder functions.
+
+        """
+
+        values = list(range(10))
+        nodes = [MultiRecursiveSubClass(i) for i in values]
+        for n1, n2 in zip(nodes[:-1], nodes[1:]):
+            n1.links[0].append(n2)
+            n2.links[1].append(n1)
+
+        output = [n.value for n in preorder(nodes[0])]
+        self.assertListEqual(output, values)
+
+        output = [n.value for n in postorder(nodes[0])]
+        self.assertListEqual(output, list(reversed(values)))
 
     def test_multi_recursive_iterator_tree(self):
         """Test the MultiRecursiveIterator for a tree

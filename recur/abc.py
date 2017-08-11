@@ -23,7 +23,7 @@ class Recursive(ABC):
         yield self
 
 
-class MultiRecursive(Recursive):
+class MultiRecursive(ABC):
     """Abstract base class for classes that provide __multirecur__ method
 
     This abstract base class can be used to generate data structures where
@@ -33,20 +33,19 @@ class MultiRecursive(Recursive):
 
     """
 
+    def __iter__(self):
+        return MultiRecursiveIterator(self, 0, 'pre')
+
     @abstractmethod
     def __multirecur__(self, index):
         """Returns the ith iterable of instances of MultiRecursive"""
         pass
 
-    def __recur__(self):
-        return self.__multirecur__(0)
+    def __reversed__(self):
+        return MultiRecursiveIterator(self, 0, 'post')
 
     @classmethod
     def __subclasshook__(cls, subclass):
-
-        # Must meet the requirements of Recursive.
-        if not super().__subclasshook__(subclass):
-            return False
 
         # and have __multirecur__.
         if not any('__multirecur__' in s.__dict__ for s in subclass.__mro__):
@@ -62,12 +61,13 @@ class MultiRecursiveIterator(Iterator):
     POSTORDER = 'post'
 
     def __init__(self, multirecursive, index, order):
+
         super().__init__()
 
         if not isinstance(multirecursive, MultiRecursive):
             raise TypeError(
                 '\'multirecursive\' must be an instance of {} or implement '
-                'the __recur__ and __multirecur__ methods')
+                'the __multirecur__ method'.format(MultiRecursive))
         self.multirecursive = multirecursive
 
         if order != self.PREORDER and order != self.POSTORDER:
@@ -83,6 +83,32 @@ class MultiRecursiveIterator(Iterator):
 
     def __next__(self):
         return next(self.nextfun)
+
+    def __reversed__(self):
+        self.order = 'post'
+        return self
+
+
+def postorder(iterable):
+    """Iterates over a Recursive or MultiRecursive structure in postorder"""
+
+    iterator = iter(iterable)
+    iterator.order = 'post'
+    return iterator
+
+
+def preorder(iterable):
+    """Iterate in preorder
+
+    Explicitly states that the Recursive or MultiRecursive structure should be
+    interated in preorder. This is the default, so this function mostly
+    serves to make the code more explicit.
+
+    """
+
+    iterator = iter(iterable)
+    iterator.order = 'pre'
+    return iterator
 
 
 def postorderfunction(func):
