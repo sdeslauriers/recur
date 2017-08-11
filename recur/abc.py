@@ -85,16 +85,16 @@ class MultiRecursiveIterator(Iterator):
         return next(self.nextfun)
 
 
-def postorder(func):
-    """Decorator function for methods that iterate in postorder"""
+def postorderfunction(func):
+    """Decorator for functions that iterate in postorder"""
     def nested(obj, *args):
         for subobj in reversed(obj):
             func(subobj, *args)
     return nested
 
 
-def preorder(func):
-    """Decorator function for methods that iterate in preorder"""
+def preorderfunction(func):
+    """Decorator for functions that iterate in preorder"""
     def nested(obj, *args):
         for subobj in obj:
             func(subobj, *args)

@@ -1,18 +1,18 @@
 import unittest
 
-from recur import postorder, preorder
 from recur.abc import MultiRecursiveIterator
+from recur.abc import postorderfunction, preorderfunction
 import recur.tree
 
 
 class FlatTree(recur.tree.Tree):
     """Test class for decorators"""
 
-    @preorder
+    @preorderfunction
     def flatten(self, output):
         output.append(self.value)
 
-    @postorder
+    @postorderfunction
     def reverse_flatten(self, output):
         output.append(self.value)
 
