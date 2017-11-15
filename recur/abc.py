@@ -159,6 +159,14 @@ class MultiRecursiveIterator(Iterator):
         return (new(i) for i in self.subitems)
 
 
+def ancestors(multirecursive):
+    return MultiRecursiveIterator(multirecursive, 1, Order.PRE)
+
+
+def descendants(multirecursive):
+    return MultiRecursiveIterator(multirecursive, 0, Order.PRE)
+
+
 def postorder(iterable):
     """Iterates over a Recursive or MultiRecursive structure in postorder"""
 
