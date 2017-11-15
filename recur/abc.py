@@ -1,5 +1,10 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 from collections.abc import Iterator
+
+
+# Possible iteration order.
+Order = Enum('Order', 'PRE POST')
 
 
 class Recursive(ABC):
@@ -12,11 +17,11 @@ class Recursive(ABC):
 
     def __iter__(self):
         """Iterate recursively over the structure in pre-order"""
-        return RecursiveIterator(self, 'pre')
+        return RecursiveIterator(self, Order.PRE)
 
     def __reversed__(self):
         """Iterate recursively over the structure in post-order"""
-        return RecursiveIterator(self, 'post')
+        return RecursiveIterator(self, Order.POST)
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -31,9 +36,6 @@ class Recursive(ABC):
 class RecursiveIterator(Iterator):
     """Iterator for Recursive instances"""
 
-    PREORDER = 'pre'
-    POSTORDER = 'post'
-
     def __init__(self, recursive, order):
 
         super().__init__()
@@ -44,9 +46,9 @@ class RecursiveIterator(Iterator):
                 'the __recur__ method'.format(Recursive))
         self.recursive = recursive
 
-        if order != self.PREORDER and order != self.POSTORDER:
+        if order != Order.PRE and order != Order.POST:
             raise ValueError('\'order\' must be {} or {}, not {}'
-                             .format(self.PREORDER, self.POSTORDER, order))
+                             .format(Order.PRE, Order.POST, order))
         self.order = order
 
         self.nextfun = (n for n in _nextfun(self))
@@ -58,7 +60,7 @@ class RecursiveIterator(Iterator):
         return next(self.nextfun)
 
     def __reversed__(self):
-        self.order = 'post'
+        self.order = Order.POST
         return self
 
     @property
@@ -67,7 +69,7 @@ class RecursiveIterator(Iterator):
 
     @property
     def subitems(self):
-        if self.order == self.PREORDER:
+        if self.order == Order.PRE:
             return self.recursive.__recur__()
         else:
             return reversed(self.recursive.__recur__())
@@ -88,7 +90,7 @@ class MultiRecursive(ABC):
     """
 
     def __iter__(self):
-        return MultiRecursiveIterator(self, 0, 'pre')
+        return MultiRecursiveIterator(self, 0, Order.PRE)
 
     @abstractmethod
     def __multirecur__(self, index):
@@ -96,7 +98,7 @@ class MultiRecursive(ABC):
         pass
 
     def __reversed__(self):
-        return MultiRecursiveIterator(self, 0, 'post')
+        return MultiRecursiveIterator(self, 0, Order.POST)
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -111,9 +113,6 @@ class MultiRecursive(ABC):
 class MultiRecursiveIterator(Iterator):
     """Iterator for MultiRecursive instances"""
 
-    PREORDER = 'pre'
-    POSTORDER = 'post'
-
     def __init__(self, multirecursive, index, order):
 
         super().__init__()
@@ -124,9 +123,9 @@ class MultiRecursiveIterator(Iterator):
                 'the __multirecur__ method'.format(MultiRecursive))
         self.multirecursive = multirecursive
 
-        if order != self.PREORDER and order != self.POSTORDER:
+        if order != Order.PRE and order != Order.POST:
             raise ValueError('\'order\' must be {} or {}, not {}'
-                             .format(self.PREORDER, self.POSTORDER, order))
+                             .format(Order.PRE, Order.POST, order))
         self.order = order
 
         self.index = index
@@ -139,7 +138,7 @@ class MultiRecursiveIterator(Iterator):
         return next(self.nextfun)
 
     def __reversed__(self):
-        self.order = 'post'
+        self.order = Order.POST
         return self
 
     @property
@@ -148,7 +147,7 @@ class MultiRecursiveIterator(Iterator):
 
     @property
     def subitems(self):
-        if self.order == self.PREORDER:
+        if self.order == Order.PRE:
             return self.multirecursive.__multirecur__(self.index)
         else:
             return reversed(self.multirecursive.__multirecur__(self.index))
@@ -164,7 +163,7 @@ def postorder(iterable):
     """Iterates over a Recursive or MultiRecursive structure in postorder"""
 
     iterator = iter(iterable)
-    iterator.order = 'post'
+    iterator.order = Order.POST
     return iterator
 
 
@@ -178,7 +177,7 @@ def preorder(iterable):
     """
 
     iterator = iter(iterable)
-    iterator.order = 'pre'
+    iterator.order = Order.PRE
     return iterator
 
 
@@ -200,11 +199,11 @@ def preorderfunction(func):
 
 def _nextfun(iter):
 
-    if iter.order == 'pre':
+    if iter.order == Order.PRE:
         yield iter.item
 
     for subiter in iter.subiterators:
         yield from subiter
 
-    if iter.order == 'post':
+    if iter.order == Order.POST:
         yield iter.item

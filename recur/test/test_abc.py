@@ -1,6 +1,6 @@
 import unittest
 
-from recur.abc import MultiRecursiveIterator, postorder, preorder
+from recur.abc import MultiRecursiveIterator, postorder, preorder, Order
 from recur.abc import postorderfunction, preorderfunction
 import recur.tree
 
@@ -89,24 +89,24 @@ class TestMultiRecursive(unittest.TestCase):
             n1.links[0].append(n2)
             n2.links[1].append(n1)
 
-        iterator = MultiRecursiveIterator(nodes[0], 0, 'pre')
+        iterator = MultiRecursiveIterator(nodes[0], 0, Order.PRE)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [0, 1, 2, 3])
 
-        iterator = MultiRecursiveIterator(nodes[0], 0, 'post')
+        iterator = MultiRecursiveIterator(nodes[0], 0, Order.POST)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [3, 2, 1, 0])
 
-        iterator = MultiRecursiveIterator(nodes[-1], 1, 'pre')
+        iterator = MultiRecursiveIterator(nodes[-1], 1, Order.PRE)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [3, 2, 1, 0])
 
-        iterator = MultiRecursiveIterator(nodes[-1], 1, 'post')
+        iterator = MultiRecursiveIterator(nodes[-1], 1, Order.POST)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [0, 1, 2, 3])
 
         # Override order using reverse.
-        iterator = MultiRecursiveIterator(nodes[-1], 1, 'pre')
+        iterator = MultiRecursiveIterator(nodes[-1], 1, Order.PRE)
         output = [n.value for n in reversed(iterator)]
         self.assertListEqual(output, [0, 1, 2, 3])
 
@@ -153,22 +153,22 @@ class TestMultiRecursive(unittest.TestCase):
         nodes[4].links[1].append(nodes[2])
 
         # Descendents, preorder.
-        iterator = MultiRecursiveIterator(nodes[0], 0, 'pre')
+        iterator = MultiRecursiveIterator(nodes[0], 0, Order.PRE)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [0, 1, 2, 3, 4])
 
         # Descendents, postorder.
-        iterator = MultiRecursiveIterator(nodes[0], 0, 'post')
+        iterator = MultiRecursiveIterator(nodes[0], 0, Order.POST)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [4, 3, 2, 1, 0])
 
         # Ancestors, preorder.
-        iterator = MultiRecursiveIterator(nodes[-1], 1, 'pre')
+        iterator = MultiRecursiveIterator(nodes[-1], 1, Order.PRE)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [4, 2, 0])
 
         # Ancestors, postorder.
-        iterator = MultiRecursiveIterator(nodes[-1], 1, 'post')
+        iterator = MultiRecursiveIterator(nodes[-1], 1, Order.POST)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [0, 2, 4])
 
@@ -184,7 +184,7 @@ class TestMultiRecursiveIterator(unittest.TestCase):
 
         # Must get an object that implements __multirecur__.
         self.assertRaises(TypeError, MultiRecursiveIterator,
-                          None, 0, 'pre')
+                          None, 0, Order.PRE)
 
         # Must get pre or post for the order'.
         self.assertRaises(ValueError, MultiRecursiveIterator,
