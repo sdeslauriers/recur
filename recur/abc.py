@@ -12,15 +12,69 @@ class Recursive(ABC):
 
     def __iter__(self):
         """Iterate recursively over the structure in pre-order"""
-        yield self
-        for item in self.__recur__():
-            yield from item.__iter__()
+        return RecursiveIterator(self, 'pre')
 
     def __reversed__(self):
         """Iterate recursively over the structure in post-order"""
-        for item in reversed(self.__recur__()):
-            yield from item.__reversed__()
-        yield self
+        return RecursiveIterator(self, 'post')
+
+    @classmethod
+    def __subclasshook__(cls, subclass):
+
+        # The instance must provide __recur__.
+        if not any('__recur__' in s.__dict__ for s in subclass.__mro__):
+            return False
+
+        return True
+
+
+class RecursiveIterator(Iterator):
+    """Iterator for Recursive instances"""
+
+    PREORDER = 'pre'
+    POSTORDER = 'post'
+
+    def __init__(self, recursive, order):
+
+        super().__init__()
+
+        if not isinstance(recursive, Recursive):
+            raise TypeError(
+                '\'recursive\' must be an instance of {} or implement '
+                'the __recur__ method'.format(Recursive))
+        self.recursive = recursive
+
+        if order != self.PREORDER and order != self.POSTORDER:
+            raise ValueError('\'order\' must be {} or {}, not {}'
+                             .format(self.PREORDER, self.POSTORDER, order))
+        self.order = order
+
+        self.nextfun = (n for n in _nextfun(self))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self.nextfun)
+
+    def __reversed__(self):
+        self.order = 'post'
+        return self
+
+    @property
+    def item(self):
+        return self.recursive
+
+    @property
+    def subitems(self):
+        if self.order == self.PREORDER:
+            return self.recursive.__recur__()
+        else:
+            return reversed(self.recursive.__recur__())
+
+    @property
+    def subiterators(self):
+        return (RecursiveIterator(i, self.order) for i in self.subitems)
 
 
 class MultiRecursive(ABC):
@@ -88,6 +142,23 @@ class MultiRecursiveIterator(Iterator):
         self.order = 'post'
         return self
 
+    @property
+    def item(self):
+        return self.multirecursive
+
+    @property
+    def subitems(self):
+        if self.order == self.PREORDER:
+            return self.multirecursive.__multirecur__(self.index)
+        else:
+            return reversed(self.multirecursive.__multirecur__(self.index))
+
+    @property
+    def subiterators(self):
+        def new(i):
+            return MultiRecursiveIterator(i, self.index, self.order)
+        return (new(i) for i in self.subitems)
+
 
 def postorder(iterable):
     """Iterates over a Recursive or MultiRecursive structure in postorder"""
@@ -130,11 +201,10 @@ def preorderfunction(func):
 def _nextfun(iter):
 
     if iter.order == 'pre':
-        yield iter.multirecursive
+        yield iter.item
 
-    items = iter.multirecursive.__multirecur__(iter.index)
-    for item in items:
-        yield from MultiRecursiveIterator(item, iter.index, iter.order)
+    for subiter in iter.subiterators:
+        yield from subiter
 
     if iter.order == 'post':
-        yield iter.multirecursive
+        yield iter.item

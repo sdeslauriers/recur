@@ -160,7 +160,7 @@ class TestMultiRecursive(unittest.TestCase):
         # Descendents, postorder.
         iterator = MultiRecursiveIterator(nodes[0], 0, 'post')
         output = [n.value for n in iterator]
-        self.assertListEqual(output, [1, 3, 4, 2, 0])
+        self.assertListEqual(output, [4, 3, 2, 1, 0])
 
         # Ancestors, preorder.
         iterator = MultiRecursiveIterator(nodes[-1], 1, 'pre')
