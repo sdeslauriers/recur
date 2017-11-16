@@ -1,6 +1,7 @@
 import unittest
 
-from recur.abc import MultiRecursiveIterator, postorder, preorder, Order
+from recur.abc import MultiRecursiveIterator, Recursive, RecursiveIterator,
+from recur.abc import Order, postorder, preorder
 from recur.abc import postorderfunction, preorderfunction
 import recur.tree
 
@@ -15,6 +16,19 @@ class FlatTree(recur.tree.Tree):
     @postorderfunction
     def reverse_flatten(self, output):
         output.append(self.value)
+
+
+class DirectedGraphNode(Recursive):
+    """Test class for the Recursive"""
+
+    def __init__(self):
+        self.children = []
+
+    def __recur__(self):
+        return self.children
+
+    def link(self, child):
+        self.children.append(child)
 
 
 class Decorators(unittest.TestCase):
@@ -189,3 +203,47 @@ class TestMultiRecursiveIterator(unittest.TestCase):
         # Must get pre or post for the order'.
         self.assertRaises(ValueError, MultiRecursiveIterator,
                           ValidRecur(), 0, 'a')
+
+
+class TestRecursiveIterator(unittest.TestCase):
+
+    def test_cycles(self):
+        """Test that we can iterate on a recursive struture with cycles"""
+
+        # The simplest case with 2 nodes linking to each other.
+        one = DirectedGraphNode()
+        two = DirectedGraphNode()
+        one.link(two)
+        two.link(one)
+
+        # Iterating on the nodes should yield just the two
+        # nodes (no repeats).
+        nodes = [node for node in one]
+        self.assertListEqual(nodes, [one, two])
+        nodes = [node for node in two]
+        self.assertListEqual(nodes, [two, one])
+
+        # Should also work in postorder.
+        nodes = [node for node in RecursiveIterator(one, Order.POST)]
+        self.assertListEqual(nodes, [two, one])
+        nodes = [node for node in RecursiveIterator(two, Order.POST)]
+        self.assertListEqual(nodes, [one, two])
+
+        # More complicated example with a tree where the leaf
+        # link to the root.
+        root = DirectedGraphNode()
+        left_leaf = DirectedGraphNode()
+        right_leaf = DirectedGraphNode()
+        root.link(left_leaf)
+        root.link(right_leaf)
+        left_leaf.link(root)
+        right_leaf.link(root)
+
+        # Iterating from any of the nodes should yield just the three
+        # nodes (no repeats).
+        nodes = [node for node in root]
+        self.assertListEqual(nodes, [root, left_leaf, right_leaf])
+        nodes = [node for node in left_leaf]
+        self.assertListEqual(nodes, [left_leaf, root, right_leaf])
+        nodes = [node for node in right_leaf]
+        self.assertListEqual(nodes, [right_leaf, root, left_leaf])

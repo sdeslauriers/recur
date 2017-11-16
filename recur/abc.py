@@ -36,7 +36,7 @@ class Recursive(ABC):
 class RecursiveIterator(Iterator):
     """Iterator for Recursive instances"""
 
-    def __init__(self, recursive, order):
+    def __init__(self, recursive, order, visited=None):
 
         super().__init__()
 
@@ -51,6 +51,7 @@ class RecursiveIterator(Iterator):
                              .format(Order.PRE, Order.POST, order))
         self.order = order
 
+        self._visited = [] if visited is None else visited
         self.nextfun = (n for n in _nextfun(self))
 
     def __iter__(self):
@@ -69,14 +70,28 @@ class RecursiveIterator(Iterator):
 
     @property
     def subitems(self):
-        if self.order == Order.PRE:
-            return self.recursive.__recur__()
-        else:
-            return reversed(self.recursive.__recur__())
+
+        items = self.recursive.__recur__()
+        if self.order == Order.POST:
+            items = reversed(items)
+
+        items = (item for item in items if item not in self._visited)
+
+        return items
 
     @property
     def subiterators(self):
-        return (RecursiveIterator(i, self.order) for i in self.subitems)
+        return (self.copy(i) for i in self.subitems)
+
+    def copy(self, recursive):
+        """Returns a new iterator with the same iteration properties
+
+        Returns a new iterator with the same iteration properties as the
+        one supplied, but that iterates on a different Recursive
+        instance.
+
+        """
+        return RecursiveIterator(recursive, self.order, self._visited)
 
 
 class MultiRecursive(ABC):
@@ -113,7 +128,7 @@ class MultiRecursive(ABC):
 class MultiRecursiveIterator(Iterator):
     """Iterator for MultiRecursive instances"""
 
-    def __init__(self, multirecursive, index, order):
+    def __init__(self, multirecursive, index, order, visited=None):
 
         super().__init__()
 
@@ -128,6 +143,7 @@ class MultiRecursiveIterator(Iterator):
                              .format(Order.PRE, Order.POST, order))
         self.order = order
 
+        self._visited = [] if visited is None else visited
         self.index = index
         self.nextfun = (n for n in _nextfun(self))
 
@@ -147,16 +163,29 @@ class MultiRecursiveIterator(Iterator):
 
     @property
     def subitems(self):
-        if self.order == Order.PRE:
-            return self.multirecursive.__multirecur__(self.index)
-        else:
-            return reversed(self.multirecursive.__multirecur__(self.index))
+
+        items = self.multirecursive.__multirecur__(self.index)
+        if self.order == Order.POST:
+            items = reversed(items)
+
+        items = (item for item in items if item not in self._visited)
+
+        return items
 
     @property
     def subiterators(self):
-        def new(i):
-            return MultiRecursiveIterator(i, self.index, self.order)
-        return (new(i) for i in self.subitems)
+        return (self.copy(i) for i in self.subitems)
+
+    def copy(self, multirecursive):
+        """Returns a new iterator with the same iteration properties
+
+        Returns a new iterator with the same iteration properties as the
+        one supplied, but that iterates on a different MultiRecursive
+        instance.
+
+        """
+        return MultiRecursiveIterator(multirecursive, self.index,
+                                      self.order, self._visited)
 
 
 def ancestors(multirecursive):
@@ -206,6 +235,10 @@ def preorderfunction(func):
 
 
 def _nextfun(iter):
+
+    # Remember that this node was visited. We have to do it before
+    # processing the node otherwise we fall in an infinite loop.
+    iter._visited.append(iter.item)
 
     if iter.order == Order.PRE:
         yield iter.item
