@@ -1,6 +1,8 @@
 import unittest
 
-from recur.abc import MultiRecursiveIterator, Recursive, RecursiveIterator,
+from random import randint
+
+from recur.abc import MultiRecursiveIterator, Recursive, RecursiveIterator
 from recur.abc import Order, postorder, preorder
 from recur.abc import postorderfunction, preorderfunction
 import recur.tree
@@ -29,6 +31,35 @@ class DirectedGraphNode(Recursive):
 
     def link(self, child):
         self.children.append(child)
+
+
+class Node(Recursive):
+    """Test class for pruning"""
+
+    def __init__(self, value):
+        super().__init__()
+        self._children = []
+        self.value = value
+
+    def __recur__(self):
+        return self._children
+
+    def __repr__(self):
+        return str(self.value)
+
+    def add(self, node):
+        self._children.append(node)
+
+
+def add_leafs(node, depth, max_children):
+    """Recursively add nodes up to depth levels"""
+
+    if depth > 0:
+
+        for i in range(1, randint(2, max_children + 1)):
+            new_node = node.__class__(i + node.value)
+            node.add(new_node)
+            add_leafs(new_node, depth - 1, max_children)
 
 
 class Decorators(unittest.TestCase):
@@ -247,3 +278,22 @@ class TestRecursiveIterator(unittest.TestCase):
         self.assertListEqual(nodes, [left_leaf, root, right_leaf])
         nodes = [node for node in right_leaf]
         self.assertListEqual(nodes, [right_leaf, root, left_leaf])
+
+    def test_pruning(self):
+        """Test pruning with a simple tree"""
+
+        def prune(node):
+            return node.value > 4
+
+        # Create a tree for testing.
+        root = Node(0)
+        add_leafs(root, depth=4, max_children=3)
+
+        # Find all the nodes with a value above 4.
+        valid_nodes = [node for node in root if node.value <= 4]
+
+        # Pruning the nodes should give the same result.
+        iterator = RecursiveIterator(root, Order.PRE, prune=prune)
+        nodes = [node for node in iterator]
+
+        self.assertListEqual(valid_nodes, nodes)

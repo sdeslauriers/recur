@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 
 
 # Possible iteration order.
@@ -34,9 +34,30 @@ class Recursive(ABC):
 
 
 class RecursiveIterator(Iterator):
-    """Iterator for Recursive instances"""
 
-    def __init__(self, recursive, order, visited=None):
+    def __init__(self, recursive, order, visited=None, prune=None):
+        """Iterator for Recursive instances
+
+        The RecursiveIterator class allows iteration on any subclass of
+        Recursive. It provides support for pre and postorder iteration along
+        the possibility of pruning the iterated instances.
+
+        Args:
+             recursive (Recursive): The instance on which the iterator
+                 operates. The iterator will iterator over this instance and
+                 its sub instances returned by the __recur__ method.
+            order (Order): The iteration order. If Order.PRE, the iterator
+                returns the instance before its sub instances. If
+                Order.POST, the iterator returns the sub instances before
+                the instance.
+            visited (Sequence): The sequence of already visited instances.
+                For internal use only.
+            prune (Callable): A callable that receives an instance of
+                Recursive and returns a boolean value. If the returned value is
+                True for a given instance, it and all its sub instances are
+                ignored by the iterator.
+
+        """
 
         super().__init__()
 
@@ -50,6 +71,9 @@ class RecursiveIterator(Iterator):
             raise ValueError('\'order\' must be {} or {}, not {}'
                              .format(Order.PRE, Order.POST, order))
         self.order = order
+
+        # Prune must be callable, verified in the setter.
+        self.prune = prune
 
         self._visited = [] if visited is None else visited
         self.nextfun = (n for n in _nextfun(self))
@@ -67,6 +91,18 @@ class RecursiveIterator(Iterator):
     @property
     def item(self):
         return self.recursive
+
+    @property
+    def prune(self):
+        """Indicates if the item and the subitems should be pruned"""
+        return self._prune is not None and self._prune(self.item)
+
+    @prune.setter
+    def prune(self, prune):
+        if prune is not None and not isinstance(prune, Callable):
+            raise ValueError('\'prune must be a Callable, not {}'
+                             .format(prune))
+        self._prune = prune
 
     @property
     def subitems(self):
@@ -91,7 +127,9 @@ class RecursiveIterator(Iterator):
         instance.
 
         """
-        return RecursiveIterator(recursive, self.order, self._visited)
+        return RecursiveIterator(recursive, self.order,
+                                 visited=self._visited,
+                                 prune=self._prune)
 
 
 class MultiRecursive(ABC):
@@ -128,7 +166,7 @@ class MultiRecursive(ABC):
 class MultiRecursiveIterator(Iterator):
     """Iterator for MultiRecursive instances"""
 
-    def __init__(self, multirecursive, index, order, visited=None):
+    def __init__(self, multirecursive, index, order, visited=None, prune=None):
 
         super().__init__()
 
@@ -142,6 +180,9 @@ class MultiRecursiveIterator(Iterator):
             raise ValueError('\'order\' must be {} or {}, not {}'
                              .format(Order.PRE, Order.POST, order))
         self.order = order
+
+        # Prune must be callable, verified in the setter.
+        self.prune = prune
 
         self._visited = [] if visited is None else visited
         self.index = index
@@ -160,6 +201,19 @@ class MultiRecursiveIterator(Iterator):
     @property
     def item(self):
         return self.multirecursive
+
+    @property
+    def prune(self):
+        """Indicates if the item and the subitems should be pruned"""
+        return self._prune is not None and self._prune(self.item)
+
+    @prune.setter
+    def prune(self, prune):
+
+        if prune is not None and not isinstance(prune, Callable):
+            raise ValueError('\'prune must be a Callable, not {}'
+                             .format(prune))
+        self._prune = prune
 
     @property
     def subitems(self):
@@ -184,8 +238,9 @@ class MultiRecursiveIterator(Iterator):
         instance.
 
         """
-        return MultiRecursiveIterator(multirecursive, self.index,
-                                      self.order, self._visited)
+        return MultiRecursiveIterator(multirecursive, self.index, self.order,
+                                      visited=self._visited,
+                                      prune=self._prune)
 
 
 def ancestors(multirecursive):
@@ -196,25 +251,27 @@ def descendants(multirecursive):
     return MultiRecursiveIterator(multirecursive, 0, Order.PRE)
 
 
-def postorder(iterable):
+def postorder(iterable, prune=None):
     """Iterates over a Recursive or MultiRecursive structure in postorder"""
 
     iterator = iter(iterable)
     iterator.order = Order.POST
+    iterator.prune = prune
     return iterator
 
 
-def preorder(iterable):
+def preorder(iterable, prune=None):
     """Iterate in preorder
 
     Explicitly states that the Recursive or MultiRecursive structure should be
-    interated in preorder. This is the default, so this function mostly
+    iterated in preorder. This is the default, so this function mostly
     serves to make the code more explicit.
 
     """
 
     iterator = iter(iterable)
     iterator.order = Order.PRE
+    iterator.prune = prune
     return iterator
 
 
@@ -239,6 +296,10 @@ def _nextfun(iter):
     # Remember that this node was visited. We have to do it before
     # processing the node otherwise we fall in an infinite loop.
     iter._visited.append(iter.item)
+
+    # If the item must be pruned, stop iterating right away.
+    if iter.prune:
+        return
 
     if iter.order == Order.PRE:
         yield iter.item
