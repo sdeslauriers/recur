@@ -2,22 +2,9 @@ import unittest
 
 from random import randint
 
-from recur.abc import MultiRecursiveIterator, Recursive, RecursiveIterator
+from recur.abc import MultiRecursiveIterator, MultiRecursive
+from recur.abc import Recursive, RecursiveIterator
 from recur.abc import Order, postorder, preorder
-from recur.abc import postorderfunction, preorderfunction
-import recur.tree
-
-
-class FlatTree(recur.tree.Tree):
-    """Test class for decorators"""
-
-    @preorderfunction
-    def flatten(self, output):
-        output.append(self.value)
-
-    @postorderfunction
-    def reverse_flatten(self, output):
-        output.append(self.value)
 
 
 class DirectedGraphNode(Recursive):
@@ -62,38 +49,7 @@ def add_leafs(node, depth, max_children):
             add_leafs(new_node, depth - 1, max_children)
 
 
-class Decorators(unittest.TestCase):
-
-    def test_preorder(self):
-        """Test the recur.abc.preorder decorator function"""
-
-        right_leaf = FlatTree(4)
-        left_leaf = FlatTree(3)
-        branch = FlatTree(2)
-        root = FlatTree(1)
-        branch.add(left_leaf, right_leaf)
-        root.add(branch)
-
-        flat = []
-        root.flatten(flat)
-        self.assertEqual(flat, [1, 2, 3, 4])
-
-    def test_postorder(self):
-        """Test the recur.abc.postorder decorator function"""
-
-        right_leaf = FlatTree('a')
-        left_leaf = FlatTree('b')
-        branch = FlatTree('c')
-        root = FlatTree('d')
-        branch.add(left_leaf, right_leaf)
-        root.add(branch)
-
-        flat = []
-        root.reverse_flatten(flat)
-        self.assertEqual(flat, [l for l in 'abcd'])
-
-
-class MultiRecursiveSubClass(recur.abc.MultiRecursive):
+class MultiRecursiveSubClass(MultiRecursive):
     """A mockup class to test the MultiRecursive ABC"""
 
     def __init__(self, value):

@@ -1,18 +1,19 @@
 import unittest
 
-import recur.tree
+from recur.tree import Tree
 
 
-class Tree(unittest.TestCase):
+class TestTree(unittest.TestCase):
 
     def test_iter_reversed(self):
         """Test that the tree class iterates correctly"""
 
-        left_leaf = recur.tree.Tree("left leaf")
-        right_leaf = recur.tree.Tree("right leaf")
-        branch = recur.tree.Tree("branch")
-        root = recur.tree.Tree("root")
-        branch.add(left_leaf, right_leaf)
+        left_leaf = Tree()
+        right_leaf = Tree()
+        branch = Tree()
+        root = Tree()
+        branch.add(left_leaf)
+        branch.add(right_leaf)
         root.add(branch)
 
         expected = [root, branch, left_leaf, right_leaf]
