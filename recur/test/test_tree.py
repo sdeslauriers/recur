@@ -1,5 +1,6 @@
 import unittest
 
+from recur.abc import postorder
 from recur.trees import Tree
 
 
@@ -18,5 +19,5 @@ class TestTree(unittest.TestCase):
 
         expected = [root, branch, left_leaf, right_leaf]
         self.assertEqual([n for n in root], expected)
-        expected = list(reversed(expected))
-        self.assertEqual([n for n in reversed(root)], expected)
+        expected = [left_leaf, right_leaf, branch, root]
+        self.assertEqual([n for n in postorder(root)], expected)

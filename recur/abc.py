@@ -3,8 +3,9 @@ from enum import Enum
 from collections.abc import Callable, Iterator
 
 
-# Possible iteration order.
+# Possible iteration orders.
 Order = Enum('Order', 'PRE POST')
+Direction = Enum('Direction', 'FORWARD REVERSE')
 
 
 class Recursive(ABC):
@@ -35,7 +36,8 @@ class Recursive(ABC):
 
 class RecursiveIterator(Iterator):
 
-    def __init__(self, recursive, order, visited=None, prune=None):
+    def __init__(self, recursive, order, direction=Direction.FORWARD,
+                 visited=None, prune=None):
         """Iterator for Recursive instances
 
         The RecursiveIterator class allows iteration on any subclass of
@@ -50,6 +52,8 @@ class RecursiveIterator(Iterator):
                 returns the instance before its sub instances. If
                 Order.POST, the iterator returns the sub instances before
                 the instance.
+            direction (Direction, optional): Indicates whether the subitems
+                should be reversed before being traversed.
             visited (Sequence): The sequence of already visited instances.
                 For internal use only.
             prune (Callable): A callable that receives an instance of
@@ -72,6 +76,9 @@ class RecursiveIterator(Iterator):
                              .format(Order.PRE, Order.POST, order))
         self.order = order
 
+        # direction must be a Direction, verified in the setter.
+        self.direction = direction
+
         # Prune must be callable, verified in the setter.
         self.prune = prune
 
@@ -87,6 +94,17 @@ class RecursiveIterator(Iterator):
     def __reversed__(self):
         self.order = Order.POST
         return self
+
+    @property
+    def direction(self):
+        return self._direction
+
+    @direction.setter
+    def direction(self, direction):
+        if not isinstance(direction, Direction):
+            raise ValueError('\'direction\' must be and instance of {}, '
+                             'not {}.'.format(Direction, direction.__class__))
+        self._direction = direction
 
     @property
     def item(self):
@@ -108,7 +126,7 @@ class RecursiveIterator(Iterator):
     def subitems(self):
 
         items = self.recursive.__recur__()
-        if self.order == Order.POST:
+        if self.direction == Direction.REVERSE:
             items = reversed(items)
 
         items = (item for item in items if item not in self._visited)
@@ -128,6 +146,7 @@ class RecursiveIterator(Iterator):
 
         """
         return RecursiveIterator(recursive, self.order,
+                                 direction=self.direction,
                                  visited=self._visited,
                                  prune=self._prune)
 
@@ -166,7 +185,8 @@ class MultiRecursive(ABC):
 class MultiRecursiveIterator(Iterator):
     """Iterator for MultiRecursive instances"""
 
-    def __init__(self, multirecursive, index, order, visited=None, prune=None):
+    def __init__(self, multirecursive, index, order,
+                 direction=Direction.FORWARD, visited=None, prune=None):
 
         super().__init__()
 
@@ -180,6 +200,9 @@ class MultiRecursiveIterator(Iterator):
             raise ValueError('\'order\' must be {} or {}, not {}'
                              .format(Order.PRE, Order.POST, order))
         self.order = order
+
+        # direction must be a Direction, verified in the setter.
+        self.direction = direction
 
         # Prune must be callable, verified in the setter.
         self.prune = prune
@@ -197,6 +220,17 @@ class MultiRecursiveIterator(Iterator):
     def __reversed__(self):
         self.order = Order.POST
         return self
+
+    @property
+    def direction(self):
+        return self._direction
+
+    @direction.setter
+    def direction(self, direction):
+        if not isinstance(direction, Direction):
+            raise ValueError('\'direction\' must be and instance of {}, '
+                             'not {}.'.format(Direction, direction.__class__))
+        self._direction = direction
 
     @property
     def item(self):
@@ -219,7 +253,7 @@ class MultiRecursiveIterator(Iterator):
     def subitems(self):
 
         items = self.multirecursive.__multirecur__(self.index)
-        if self.order == Order.POST:
+        if self.direction == Direction.REVERSE:
             items = reversed(items)
 
         items = (item for item in items if item not in self._visited)
@@ -239,6 +273,7 @@ class MultiRecursiveIterator(Iterator):
 
         """
         return MultiRecursiveIterator(multirecursive, self.index, self.order,
+                                      direction=self.direction,
                                       visited=self._visited,
                                       prune=self._prune)
 

@@ -4,7 +4,7 @@ from random import randint
 
 from recur.abc import MultiRecursiveIterator, MultiRecursive
 from recur.abc import Recursive, RecursiveIterator
-from recur.abc import Order, postorder, preorder
+from recur.abc import Direction, Order, postorder, preorder
 
 
 class DirectedGraphNode(Recursive):
@@ -153,13 +153,25 @@ class TestMultiRecursive(unittest.TestCase):
         nodes[2].links[0].append(nodes[4])
         nodes[4].links[1].append(nodes[2])
 
-        # Descendents, preorder.
+        # Descendants, preorder.
         iterator = MultiRecursiveIterator(nodes[0], 0, Order.PRE)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [0, 1, 2, 3, 4])
 
-        # Descendents, postorder.
+        # Descendants, postorder.
         iterator = MultiRecursiveIterator(nodes[0], 0, Order.POST)
+        output = [n.value for n in iterator]
+        self.assertListEqual(output, [1, 3, 4, 2, 0])
+
+        # Descendants, preorder, reversed.
+        iterator = MultiRecursiveIterator(nodes[0], 0, Order.PRE,
+                                          direction=Direction.REVERSE)
+        output = [n.value for n in iterator]
+        self.assertListEqual(output, [0, 2, 4, 3, 1])
+
+        # Descendants, postorder, reversed.
+        iterator = MultiRecursiveIterator(nodes[0], 0, Order.POST,
+                                          direction=Direction.REVERSE)
         output = [n.value for n in iterator]
         self.assertListEqual(output, [4, 3, 2, 1, 0])
 
