@@ -5,6 +5,7 @@ from random import randint
 from recur.abc import MultiRecursiveIterator, MultiRecursive
 from recur.abc import Recursive, RecursiveIterator
 from recur.abc import Direction, Order, postorder, preorder
+from recur.abc import ancestors, descendants
 
 
 class DirectedGraphNode(Recursive):
@@ -202,6 +203,21 @@ class TestMultiRecursiveIterator(unittest.TestCase):
         # Must get pre or post for the order'.
         self.assertRaises(ValueError, MultiRecursiveIterator,
                           ValidRecur(), 0, 'a')
+
+    def test_iteration(self):
+        """Test simple for loops on multirecursive instances"""
+
+        multi = MultiRecursiveSubClass(0)
+
+        # Iterating on a multirecursive instance with no links should yield
+        # itself.
+        multis = [m for m in descendants(multi)]
+        self.assertEqual(len(multis), 1)
+        self.assertEqual(multis[0], multi)
+
+        multis = [m for m in ancestors(multi)]
+        self.assertEqual(len(multis), 1)
+        self.assertEqual(multis[0], multi)
 
 
 class TestRecursiveIterator(unittest.TestCase):
