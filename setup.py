@@ -8,7 +8,7 @@ structures."""
 
 setup(
     name='recursive-abc',
-    version='0.1.0',
+    version='0.2.0',
     description=DESCRIPTION,
     long_description=DESCRIPTION,
     author='Samuel Deslauriers-Gauthier',
